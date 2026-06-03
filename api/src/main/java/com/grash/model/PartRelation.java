@@ -24,7 +24,6 @@ import jakarta.validation.constraints.NotNull;
 public class PartRelation extends CompanyAudit {
 
     @NotNull
-    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Schema(description = "Type of relation between the two parts", requiredMode = Schema.RequiredMode.REQUIRED)
     private PartRelationType relationType = PartRelationType.RELATED;

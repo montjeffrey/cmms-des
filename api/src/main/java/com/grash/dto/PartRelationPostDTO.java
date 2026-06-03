@@ -21,7 +21,6 @@ public class PartRelationPostDTO {
     private IdDTO targetPart;
 
     @NotNull
-    @Builder.Default
     @Schema(description = "Type of relation", requiredMode = Schema.RequiredMode.REQUIRED)
     private PartRelationType relationType = PartRelationType.RELATED;
 }
