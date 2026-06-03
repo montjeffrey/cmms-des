@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Divider,
   Grid,
   IconButton,
@@ -18,20 +19,32 @@ import { ChangeEvent, useContext, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditTwoToneIcon from '@mui/icons-material/EditTwoTone';
 import DeleteTwoToneIcon from '@mui/icons-material/DeleteTwoTone';
-import Part from '../../../models/owns/part';
+import AddTwoToneIcon from '@mui/icons-material/AddTwoTone';
+import Part, {
+  PartRelation,
+  PartRelationType
+} from '../../../models/owns/part';
 import { CompanySettingsContext } from '../../../contexts/CompanySettingsContext';
+import { CustomSnackBarContext } from '../../../contexts/CustomSnackBarContext';
+import { getErrorMessage } from '../../../utils/api';
 import { PermissionEntity } from '../../../models/owns/role';
 import useAuth from '../../../hooks/useAuth';
 import ImageViewer from 'react-simple-image-viewer';
 import {
   getAssetUrl,
   getCustomerUrl,
+  getPartUrl,
   getTeamUrl,
   getUserUrl,
   getVendorUrl,
   getWorkOrderUrl
 } from '../../../utils/urlPaths';
 import { editPart } from '../../../slices/part';
+import {
+  getPartRelations,
+  deletePartRelation
+} from '../../../slices/partRelation';
+import AddPartRelationModal from './AddPartRelationModal';
 import { useDispatch, useSelector } from '../../../store';
 import FilesList from '../components/FilesList';
 import BasicField from '../components/BasicField';
@@ -54,6 +67,7 @@ export default function PartDetails(props: PartDetailsProps) {
   const { getFormattedDate, getFormattedCurrency } = useContext(
     CompanySettingsContext
   );
+  const { showSnackBar } = useContext(CustomSnackBarContext);
   const dispatch = useDispatch();
   const [currentTab, setCurrentTab] = useState<string>('details');
   const [isImageViewerOpen, setIsImageViewerOpen] = useState<boolean>(false);
@@ -63,11 +77,28 @@ export default function PartDetails(props: PartDetailsProps) {
   const navigate = useNavigate();
   const assets = assetsByPart[part?.id] ?? [];
   const workOrders = workOrdersByPart[part?.id] ?? [];
+  const { relationsByPart } = useSelector((state) => state.partRelations);
+  const relations = relationsByPart[part?.id] ?? [];
+  const getCounterpart = (relation: PartRelation) =>
+    relation.sourcePart.id === part?.id
+      ? relation.targetPart
+      : relation.sourcePart;
+  const substitutes = relations.filter((r) => r.relationType === 'SUBSTITUTE');
+  const accessories = relations.filter((r) => r.relationType === 'RELATED');
+  const canEditParts = hasEditPermission(
+    PermissionEntity.PARTS_AND_MULTIPARTS,
+    part
+  );
+  const [relationModal, setRelationModal] = useState<{
+    open: boolean;
+    relationType: PartRelationType;
+  }>({ open: false, relationType: 'SUBSTITUTE' });
   const tabs = [
     { value: 'details', label: t('details') },
     { value: 'assets', label: t('assets') },
     { value: 'files', label: t('files') },
-    { value: 'workOrders', label: t('work_orders') }
+    { value: 'workOrders', label: t('work_orders') },
+    { value: 'relatedParts', label: t('related_parts') }
     //TODO events
   ];
   const handleTabsChange = (_event: ChangeEvent<{}>, value: string): void => {
@@ -76,6 +107,8 @@ export default function PartDetails(props: PartDetailsProps) {
       dispatch(getAssetsByPart(part.id));
     } else if (value === 'workOrders' && !workOrders.length) {
       dispatch(getWorkOrdersByPart(part.id));
+    } else if (value === 'relatedParts' && !relations.length) {
+      dispatch(getPartRelations(part.id));
     }
   };
   const firstFieldsToRender = (part: Part): { label: string; value: any }[] => [
@@ -401,7 +434,105 @@ export default function PartDetails(props: PartDetailsProps) {
             )}
           </Box>
         )}
+        {currentTab === 'relatedParts' && (
+          <Box>
+            <Grid container spacing={3}>
+              {(['SUBSTITUTE', 'RELATED'] as PartRelationType[]).map((type) => {
+                const items = type === 'SUBSTITUTE' ? substitutes : accessories;
+                return (
+                  <Grid item xs={12} key={type}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Typography variant="h4">
+                        {type === 'SUBSTITUTE'
+                          ? t('substitutes')
+                          : t('accessories')}
+                      </Typography>
+                      {canEditParts && (
+                        <Button
+                          startIcon={<AddTwoToneIcon fontSize="small" />}
+                          onClick={() =>
+                            setRelationModal({ open: true, relationType: type })
+                          }
+                        >
+                          {t('add')}
+                        </Button>
+                      )}
+                    </Stack>
+                    {items.length ? (
+                      <List sx={{ width: '100%' }}>
+                        {items.map((relation) => {
+                          const counterpart = getCounterpart(relation);
+                          return (
+                            <ListItem
+                              key={relation.id}
+                              divider
+                              secondaryAction={
+                                canEditParts && (
+                                  <IconButton
+                                    edge="end"
+                                    onClick={() =>
+                                      dispatch(
+                                        deletePartRelation(part.id, relation.id)
+                                      ).catch((err) =>
+                                        showSnackBar(
+                                          getErrorMessage(err),
+                                          'error'
+                                        )
+                                      )
+                                    }
+                                  >
+                                    <DeleteTwoToneIcon color="error" />
+                                  </IconButton>
+                                )
+                              }
+                            >
+                              <ListItemText
+                                primary={
+                                  <Link href={getPartUrl(counterpart.id)}>
+                                    {counterpart.name}
+                                  </Link>
+                                }
+                                secondary={counterpart.description}
+                              />
+                            </ListItem>
+                          );
+                        })}
+                      </List>
+                    ) : (
+                      <Stack
+                        direction="row"
+                        justifyContent="center"
+                        width="100%"
+                        sx={{ my: 2 }}
+                      >
+                        <Typography variant="h5">
+                          {t('no_related_part')}
+                        </Typography>
+                      </Stack>
+                    )}
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Box>
+        )}
       </Grid>
+      {relationModal.open && (
+        <AddPartRelationModal
+          open={relationModal.open}
+          onClose={() => setRelationModal((prev) => ({ ...prev, open: false }))}
+          partId={part.id}
+          relationType={relationModal.relationType}
+          excludePartIds={(relationModal.relationType === 'SUBSTITUTE'
+            ? substitutes
+            : accessories
+          ).map((relation) => getCounterpart(relation).id)}
+        />
+      )}
       {isImageViewerOpen && (
         <div style={{ zIndex: 100 }}>
           <ImageViewer
