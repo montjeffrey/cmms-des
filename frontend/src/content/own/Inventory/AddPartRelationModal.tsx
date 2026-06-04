@@ -83,7 +83,7 @@ export default function AddPartRelationModal({
             <DialogContent dividers sx={{ p: 3 }}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <Autocomplete
+                  <Autocomplete<PartMiniDTO, false, false, false>
                     fullWidth
                     options={options}
                     getOptionLabel={(option) => option.name}
