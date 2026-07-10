@@ -36,3 +36,14 @@ export interface PartMiniDTO {
   cost: number;
   description: string;
 }
+
+export type PartRelationType = 'SUBSTITUTE' | 'RELATED';
+
+export const partRelationTypes: PartRelationType[] = ['SUBSTITUTE', 'RELATED'];
+
+export interface PartRelation {
+  id: number;
+  sourcePart: PartMiniDTO;
+  targetPart: PartMiniDTO;
+  relationType: PartRelationType;
+}

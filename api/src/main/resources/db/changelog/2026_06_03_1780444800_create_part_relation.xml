@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="2026_06_03_part_relation_00000000001" author="montjeffrey">
+        <createTable tableName="part_relation">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+
+            <column name="relation_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="source_part_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+            <column name="target_part_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="company_id" type="bigint">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT"/>
+            <column name="updated_by" type="BIGINT"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="part_relation" baseColumnNames="source_part_id"
+                                 constraintName="fk_part_relation_source_part" referencedTableName="part"
+                                 referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="part_relation" baseColumnNames="target_part_id"
+                                 constraintName="fk_part_relation_target_part" referencedTableName="part"
+                                 referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="part_relation" baseColumnNames="company_id"
+                                 constraintName="fk_part_relation_company" referencedTableName="company"
+                                 referencedColumnNames="id" onDelete="CASCADE"/>
+
+        <addUniqueConstraint tableName="part_relation"
+                             columnNames="source_part_id, target_part_id, relation_type"
+                             constraintName="uq_part_relation_source_target_type"/>
+
+        <createIndex tableName="part_relation" indexName="idx_part_relation_target_part">
+            <column name="target_part_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="2026_06_03_part_relation_seq_00000000002" author="montjeffrey">
+        <createSequence sequenceName="part_relation_seq" startValue="1" incrementBy="50"/>
+    </changeSet>
+
+</databaseChangeLog>

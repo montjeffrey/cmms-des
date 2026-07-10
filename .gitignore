@@ -6,4 +6,5 @@
 atlas_backups
 docker-compose-dev.yml
 logo
+docs/
 *.log

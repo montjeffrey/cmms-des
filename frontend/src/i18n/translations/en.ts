@@ -201,6 +201,12 @@ const locale = {
   add_cost_description:
     'Fill in the fields below to create and add Additional Cost',
   add: 'Add',
+  related_parts: 'Related parts',
+  substitutes: 'Substitutes',
+  accessories: 'Accessories',
+  add_substitute_part: 'Add substitute part',
+  add_related_part: 'Add related part',
+  no_related_part: 'No related part',
   hourly_rate: 'Hourly Rate',
   include_time: 'Include this time in the total time',
   include_time_description:
